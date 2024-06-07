@@ -29,7 +29,6 @@
 					<Anchors>
 						<Anchor point="LEFT" relativeKey="$parentTitleBg" x="5" y="0"/>
 					</Anchors>
-					<Text>Debug Log</Text>
 				</FontString>
 			</Layer>
 		</Layers>
