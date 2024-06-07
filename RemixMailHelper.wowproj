@@ -16,9 +16,6 @@
     <Content Include="RemixMailHelper.toc">
       <SubType>TableOfContents</SubType>
     </Content>
-    <Content Include="RemixMailHelper.xml">
-      <SubType>Frame</SubType>
-    </Content>
   </ItemGroup>
   <Import Project="$(DevEnvDir)\Extensions\Tools\MSBuild\AddonStudio\Wow\3.0\WowAddonStudio.targets" />
   <!--
