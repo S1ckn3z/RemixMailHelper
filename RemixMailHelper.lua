@@ -12,13 +12,15 @@ local threadsItemIDs = {
 
 -- XP Bonis ids
 local xpBonusItemIDs = {
-    224408, 224407, 220763
+    [224407] = "Normal",
+    [224408] = "Heroic",
+    [220763] = "Raid"
 }
 
 local function CountItemsInMail()
     local numItems = GetInboxNumItems()
     local threadsCount = 0
-    local xpBonusCount = 0
+    local xpCounts = { Normal = 0, Heroic = 0, Raid = 0 }
 
     for mailIndex = 1, numItems do
         for attachmentIndex = 1, ATTACHMENTS_MAX_RECEIVE do
@@ -32,24 +34,38 @@ local function CountItemsInMail()
                         break
                     end
                 end
-                for _, id in ipairs(xpBonusItemIDs) do
-                    if itemID == id then
-                        xpBonusCount = xpBonusCount + 1
-                        break
-                    end
+                local quality = xpBonusItemIDs[itemID]
+                if quality then
+                    xpCounts[quality] = xpCounts[quality] + 1
                 end
             end
         end
     end
 
-    return threadsCount, xpBonusCount
+    return threadsCount, xpCounts
 end
 
 local function UpdateItemCountFrame()
-    local threadsCount, xpBonusCount = CountItemsInMail()
+    local threadsCount, xpCounts = CountItemsInMail()
     if ItemCountFrame then
         ItemCountFrame.threadsText:SetText("Threads: " .. threadsCount)
-        ItemCountFrame.xpBonusText:SetText("XP Boni: " .. xpBonusCount)
+        local xpText = "XP Boni: "
+        local first = true
+        for quality, count in pairs(xpCounts) do
+            if count > 0 then
+                if not first then
+                    xpText = xpText .. " | "
+                end
+                xpText = xpText .. quality .. ": " .. count
+                first = false
+            end
+        end
+        if first then
+            ItemCountFrame.xpBonusText:Hide()
+        else
+            ItemCountFrame.xpBonusText:SetText(xpText)
+            ItemCountFrame.xpBonusText:Show()
+        end
     end
 end
 
@@ -66,13 +82,7 @@ local function RetrieveItemsFromMail(filterFunc)
         if itemLink then
             local itemID = select(2, strsplit(":", itemLink))
             itemID = tonumber(itemID)
-            local isXPBonusItem = false
-            for _, id in ipairs(xpBonusItemIDs) do
-                if itemID == id then
-                    isXPBonusItem = true
-                    break
-                end
-            end
+            local isXPBonusItem = xpBonusItemIDs[itemID] ~= nil
             if itemID and not isXPBonusItem and (not filterFunc or filterFunc(itemID)) then
                 TakeInboxItem(mailIndex, attachmentIndex)
             end
@@ -110,7 +120,7 @@ local function CreateItemCountFrame()
 
         ItemCountFrame.xpBonusText = ItemCountFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         ItemCountFrame.xpBonusText:SetPoint("LEFT", ItemCountFrame.threadsText, "RIGHT", 20, 0)
-        ItemCountFrame.xpBonusText:SetText("XP Boni: 0")
+        ItemCountFrame.xpBonusText:SetText("")
     end
 end
 
