@@ -73,27 +73,29 @@ local function RetrieveItemsFromMail(filterFunc)
     local numItems = GetInboxNumItems()
 
     local function ProcessNextMail(mailIndex, attachmentIndex)
-        if mailIndex > numItems then
+        if mailIndex > numItems or CalculateTotalNumberOfFreeBagSlots() == 0 then
             UpdateItemCountFrame()
             return
         end
 
-        local itemLink = GetInboxItemLink(mailIndex, attachmentIndex)
-        if itemLink then
-            local itemID = select(2, strsplit(":", itemLink))
-            itemID = tonumber(itemID)
-            local isXPBonusItem = xpBonusItemIDs[itemID] ~= nil
-            if itemID and not isXPBonusItem and (not filterFunc or filterFunc(itemID)) then
-                TakeInboxItem(mailIndex, attachmentIndex)
+        if not C_Mail.IsCommandPending() then
+            local itemLink = GetInboxItemLink(mailIndex, attachmentIndex)
+            if itemLink then
+                local itemID = select(2, strsplit(":", itemLink))
+                itemID = tonumber(itemID)
+                local isXPBonusItem = xpBonusItemIDs[itemID] ~= nil
+                if itemID and not isXPBonusItem and (not filterFunc or filterFunc(itemID)) then
+                    TakeInboxItem(mailIndex, attachmentIndex)
+                end
+            end
+
+            attachmentIndex = attachmentIndex + 1
+            if attachmentIndex > ATTACHMENTS_MAX_RECEIVE then
+                mailIndex = mailIndex + 1
+                attachmentIndex = 1
             end
         end
-
-        attachmentIndex = attachmentIndex + 1
-        if attachmentIndex > ATTACHMENTS_MAX_RECEIVE then
-            mailIndex = mailIndex + 1
-            attachmentIndex = 1
-        end
-        C_Timer.After(0.1, function() ProcessNextMail(mailIndex, attachmentIndex) end)
+        C_Timer.After(0.15, function() ProcessNextMail(mailIndex, attachmentIndex) end)
     end
 
     ProcessNextMail(1, 1)
