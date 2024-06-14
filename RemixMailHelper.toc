@@ -4,4 +4,8 @@
 ## Author: s1ckn3z_1337
 ## Version: 1.0.5
 
+XP_Table.lua
+XP_Calculation.lua
+ItemCountFrame.lua
+InfoWindow.lua
 RemixMailHelper.lua

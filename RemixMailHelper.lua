@@ -1,6 +1,17 @@
 local addonName, addonTable = ...
 addonName = "Remix Mail Helper"
 
+-- Ensure XP_Calculation is defined globally
+local XP_Calculation = _G.XP_Calculation
+XP_Calculation:Initialize({
+    [224407] = "Normal",
+    [224408] = "Heroic",
+    [220763] = "Raid"
+})
+
+local ItemCountFrameModule = addonTable.ItemCountFrameModule
+local InfoWindow = addonTable.InfoWindow
+
 -- Thread ids
 local threadsItemIDs = {
     219264, 219273, 219282, 219261, 219270, 219279,
@@ -10,16 +21,17 @@ local threadsItemIDs = {
     219256, 219265, 219274
 }
 
--- XP Bonis ids
+-- XP Bonus ids
 local xpBonusItemIDs = {
     [224407] = "Normal",
     [224408] = "Heroic",
     [220763] = "Raid"
 }
 
-local function CountItemsInMail()
+function addonTable.CountItemsInMail()
     local numItems = GetInboxNumItems()
     local threadsCount = 0
+    local itemCount = 0
     local xpCounts = { Normal = 0, Heroic = 0, Raid = 0 }
 
     for mailIndex = 1, numItems do
@@ -28,45 +40,25 @@ local function CountItemsInMail()
             if itemLink then
                 local itemID = select(2, strsplit(":", itemLink))
                 itemID = tonumber(itemID)
+                local isThread = false
                 for _, id in ipairs(threadsItemIDs) do
                     if itemID == id then
                         threadsCount = threadsCount + 1
+                        isThread = true
                         break
                     end
                 end
                 local quality = xpBonusItemIDs[itemID]
                 if quality then
                     xpCounts[quality] = xpCounts[quality] + 1
+                elseif not isThread then
+                    itemCount = itemCount + 1
                 end
             end
         end
     end
 
-    return threadsCount, xpCounts
-end
-
-local function UpdateItemCountFrame()
-    local threadsCount, xpCounts = CountItemsInMail()
-    if ItemCountFrame then
-        ItemCountFrame.threadsText:SetText("Threads: " .. threadsCount)
-        local xpText = "XP Boni: "
-        local first = true
-        for quality, count in pairs(xpCounts) do
-            if count > 0 then
-                if not first then
-                    xpText = xpText .. " | "
-                end
-                xpText = xpText .. quality .. ": " .. count
-                first = false
-            end
-        end
-        if first then
-            ItemCountFrame.xpBonusText:Hide()
-        else
-            ItemCountFrame.xpBonusText:SetText(xpText)
-            ItemCountFrame.xpBonusText:Show()
-        end
-    end
+    return threadsCount, itemCount, xpCounts
 end
 
 local function RetrieveItemsFromMail(filterFunc)
@@ -74,7 +66,8 @@ local function RetrieveItemsFromMail(filterFunc)
 
     local function ProcessNextMail(mailIndex, attachmentIndex)
         if mailIndex > numItems then
-            UpdateItemCountFrame()
+            ItemCountFrameModule:UpdateItemCountFrame()
+            InfoWindow:UpdateInfoText()
             return
         end
 
@@ -108,44 +101,96 @@ local function FilterThreads(itemID)
     return false
 end
 
-local function CreateItemCountFrame()
-    if not ItemCountFrame then
-        ItemCountFrame = CreateFrame("Frame", "ItemCountFrame", MailFrame)
-        ItemCountFrame:SetSize(200, 20)
-        ItemCountFrame:SetPoint("TOP", MailFrame, "TOP", 0, 20)
+local function SnapButtonFrameToMailFrame()
+    if MailFrame and ButtonFrame then
+        ButtonFrame:ClearAllPoints()
+        ButtonFrame:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", 10, 0)
+    end
+end
 
-        ItemCountFrame.threadsText = ItemCountFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        ItemCountFrame.threadsText:SetPoint("LEFT", ItemCountFrame, "LEFT", 10, 0)
-        ItemCountFrame.threadsText:SetText("Threads: 0")
+local function CreateButtonFrame()
+    if not ButtonFrame then
+        ButtonFrame = CreateFrame("Frame", "ButtonFrame", MailFrame, "BasicFrameTemplateWithInset")
+        ButtonFrame:SetSize(150, 140)
+        ButtonFrame:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", 10, 0)  -- Align the top
+        ButtonFrame:SetMovable(true)
+        ButtonFrame:EnableMouse(true)
+        ButtonFrame:RegisterForDrag("LeftButton")
+        ButtonFrame:SetScript("OnDragStart", ButtonFrame.StartMoving)
+        ButtonFrame:SetScript("OnDragStop", ButtonFrame.StopMovingOrSizing)
 
-        ItemCountFrame.xpBonusText = ItemCountFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        ItemCountFrame.xpBonusText:SetPoint("LEFT", ItemCountFrame.threadsText, "RIGHT", 20, 0)
-        ItemCountFrame.xpBonusText:SetText("")
+        ButtonFrame.title = ButtonFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        ButtonFrame.title:SetPoint("CENTER", ButtonFrame.TitleBg, "CENTER", 0, 0)
+        ButtonFrame.title:SetText("Mail Helper")
+    end
+end
+
+local function ShowButtonFrame()
+    if ButtonFrame then
+        ButtonFrame:Show()
+        SnapButtonFrameToMailFrame()
+    end
+end
+
+local function HideButtonFrame()
+    if ButtonFrame then
+        ButtonFrame:Hide()
+    end
+end
+
+local function CreateButtons()
+    if not RetrieveItemsButton then
+        RetrieveItemsButton = CreateFrame("Button", "RetrieveItemsButton", ButtonFrame, "UIPanelButtonTemplate")
+        RetrieveItemsButton:SetSize(120, 30)
+        RetrieveItemsButton:SetPoint("TOP", ButtonFrame, "TOP", 0, -30)
+        RetrieveItemsButton:SetText("Retrieve Items")
+        RetrieveItemsButton:SetScript("OnClick", function() RetrieveItemsFromMail() end)
+    end
+
+    if not RetrieveThreadsButton then
+        RetrieveThreadsButton = CreateFrame("Button", "RetrieveThreadsButton", ButtonFrame, "UIPanelButtonTemplate")
+        RetrieveThreadsButton:SetSize(120, 30)
+        RetrieveThreadsButton:SetPoint("TOP", RetrieveItemsButton, "BOTTOM", 0, -5)
+        RetrieveThreadsButton:SetText("Retrieve Threads")
+        RetrieveThreadsButton:SetScript("OnClick", function() RetrieveItemsFromMail(FilterThreads) end)
+    end
+
+    if not InfoButton then
+        InfoButton = CreateFrame("Button", "InfoButton", ButtonFrame, "UIPanelButtonTemplate")
+        InfoButton:SetSize(120, 30)
+        InfoButton:SetPoint("TOP", RetrieveThreadsButton, "BOTTOM", 0, -5)
+        InfoButton:SetText("Show More Info")
+        InfoButton:SetScript("OnClick", function() InfoWindow:ToggleInfoText() end)
+    end
+end
+
+local mailFrameLastPos = { MailFrame:GetLeft(), MailFrame:GetTop() }
+
+local function CheckMailFramePosition()
+    local currentPos = { MailFrame:GetLeft(), MailFrame:GetTop() }
+    if mailFrameLastPos[1] ~= currentPos[1] or mailFrameLastPos[2] ~= currentPos[2] then
+        SnapButtonFrameToMailFrame()
+        mailFrameLastPos = currentPos
     end
 end
 
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("MAIL_SHOW")
 eventFrame:RegisterEvent("MAIL_INBOX_UPDATE")
+eventFrame:RegisterEvent("MAIL_CLOSED")
 eventFrame:SetScript("OnEvent", function(self, event, ...)
     if event == "MAIL_SHOW" then
-        CreateItemCountFrame()
-        UpdateItemCountFrame()
-        if not RetrieveItemsButton then
-            RetrieveItemsButton = CreateFrame("Button", "RetrieveItemsButton", MailFrame, "UIPanelButtonTemplate")
-            RetrieveItemsButton:SetSize(120, 25)
-            RetrieveItemsButton:SetPoint("TOPLEFT", MailFrame, "TOPLEFT", 55, -30)
-            RetrieveItemsButton:SetText("Retrieve Items")
-            RetrieveItemsButton:SetScript("OnClick", function() RetrieveItemsFromMail() end)
-        end
-        if not RetrieveThreadsButton then
-            RetrieveThreadsButton = CreateFrame("Button", "RetrieveThreadsButton", MailFrame, "UIPanelButtonTemplate")
-            RetrieveThreadsButton:SetSize(120, 25)
-            RetrieveThreadsButton:SetPoint("LEFT", RetrieveItemsButton, "RIGHT", 10, 0)
-            RetrieveThreadsButton:SetText("Retrieve Threads")
-            RetrieveThreadsButton:SetScript("OnClick", function() RetrieveItemsFromMail(FilterThreads) end)
-        end
+        CreateButtonFrame()
+        CreateButtons()
+        ShowButtonFrame()
+        InfoWindow:CreateInfoText()
+        InfoWindow:HideInfoText() -- Hide info text by default
+        InfoWindow:UpdateInfoText()
+        self:SetScript("OnUpdate", CheckMailFramePosition)
     elseif event == "MAIL_INBOX_UPDATE" then
-        UpdateItemCountFrame()
+        InfoWindow:UpdateInfoText()
+    elseif event == "MAIL_CLOSED" then
+        HideButtonFrame()
+        self:SetScript("OnUpdate", nil)
     end
 end)

@@ -10,11 +10,23 @@
     <OutputPath>.</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="InfoWindow.lua">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="ItemCountFrame.lua">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="RemixMailHelper.lua">
       <SubType>Code</SubType>
     </Content>
     <Content Include="RemixMailHelper.toc">
       <SubType>TableOfContents</SubType>
+    </Content>
+    <Content Include="XP_Calculation.lua">
+      <SubType>Code</SubType>
+    </Content>
+    <Content Include="XP_Table.lua">
+      <SubType>Code</SubType>
     </Content>
   </ItemGroup>
   <Import Project="$(DevEnvDir)\Extensions\Tools\MSBuild\AddonStudio\Wow\3.0\WowAddonStudio.targets" />
