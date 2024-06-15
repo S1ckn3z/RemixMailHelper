@@ -1,7 +1,6 @@
 local addonName, addonTable = ...
 addonName = "Remix Mail Helper"
 
--- Ensure XP_Calculation is defined globally
 local XP_Calculation = _G.XP_Calculation
 XP_Calculation:Initialize({
     [224407] = "Normal",
@@ -12,16 +11,15 @@ XP_Calculation:Initialize({
 local ItemCountFrameModule = addonTable.ItemCountFrameModule
 local InfoWindow = addonTable.InfoWindow
 
--- Thread ids
 local threadsItemIDs = {
     219264, 219273, 219282, 219261, 219270, 219279,
     219258, 219267, 219276, 219263, 219272, 219281,
     219260, 219269, 219278, 219257, 219266, 219275,
     219262, 219271, 219280, 219259, 219268, 219277,
-    219256, 219265, 219274
+    219256, 219265, 219274, 210989, 210985, 217722,
+    210983, 210982, 210990
 }
 
--- XP Bonus ids
 local xpBonusItemIDs = {
     [224407] = "Normal",
     [224408] = "Heroic",
@@ -40,24 +38,30 @@ function addonTable.CountItemsInMail()
             if itemLink then
                 local itemID = select(2, strsplit(":", itemLink))
                 itemID = tonumber(itemID)
+                
                 local isThread = false
                 for _, id in ipairs(threadsItemIDs) do
                     if itemID == id then
-                        threadsCount = threadsCount + 1
                         isThread = true
                         break
                     end
                 end
+                
+                local isXPItem = false
                 local quality = xpBonusItemIDs[itemID]
                 if quality then
                     xpCounts[quality] = xpCounts[quality] + 1
-                elseif not isThread then
+                    isXPItem = true
+                end
+                
+                if isThread then
+                    threadsCount = threadsCount + 1
+                elseif not isXPItem then
                     itemCount = itemCount + 1
                 end
             end
         end
     end
-
     return threadsCount, itemCount, xpCounts
 end
 
@@ -112,7 +116,7 @@ local function CreateButtonFrame()
     if not ButtonFrame then
         ButtonFrame = CreateFrame("Frame", "ButtonFrame", MailFrame, "BasicFrameTemplateWithInset")
         ButtonFrame:SetSize(150, 140)
-        ButtonFrame:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", 10, 0)  -- Align the top
+        ButtonFrame:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", 10, 0)
         ButtonFrame:SetMovable(true)
         ButtonFrame:EnableMouse(true)
         ButtonFrame:RegisterForDrag("LeftButton")
@@ -184,7 +188,6 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
         CreateButtons()
         ShowButtonFrame()
         InfoWindow:CreateInfoText()
-        InfoWindow:HideInfoText() -- Hide info text by default
         InfoWindow:UpdateInfoText()
         self:SetScript("OnUpdate", CheckMailFramePosition)
     elseif event == "MAIL_INBOX_UPDATE" then

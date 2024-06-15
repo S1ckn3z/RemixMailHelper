@@ -2,7 +2,7 @@
 ## Title: Remix Mail Helper
 ## Notes: Helps to retrieve mail items except certain item IDs.
 ## Author: s1ckn3z_1337
-## Version: 1.0.5
+## Version: 1.1.0
 
 XP_Table.lua
 XP_Calculation.lua
