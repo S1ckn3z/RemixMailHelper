@@ -8,7 +8,6 @@ XP_Calculation:Initialize({
     [220763] = "Raid"
 })
 
-local ItemCountFrameModule = addonTable.ItemCountFrameModule
 local InfoWindow = addonTable.InfoWindow
 
 local threadsItemIDs = {
@@ -70,7 +69,6 @@ local function RetrieveItemsFromMail(filterFunc)
 
     local function ProcessNextMail(mailIndex, attachmentIndex)
         if mailIndex > numItems then
-            ItemCountFrameModule:UpdateItemCountFrame()
             InfoWindow:UpdateInfoText()
             return
         end

@@ -109,5 +109,7 @@ function XP_Calculation:CalculateOverflowXP(currentLevel, missingTokens, tokenTy
     return overflowXP
 end
 
+
+
 _G.XP_Calculation = XP_Calculation
 return XP_Calculation
