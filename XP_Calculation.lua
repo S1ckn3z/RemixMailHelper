@@ -59,57 +59,32 @@ function XP_Calculation:GetCloakBonusXP()
     return cloakBonusXP
 end
 
-function XP_Calculation:CalculateTokens(currentLevel, currentXP, xpTokensInMail, cloakBonusXP)
-    local requiredDungeonTokens = 0
-    local requiredRaidTokens = 0
-    local requiredRaidTokensUnder25 = 0
-    local currentLevelBlueXPToken = 0
-    local currentLevelEpicXPToken = 0
-
-    for i, v in ipairs(XP_Table) do
+function XP_Calculation:MailTokenLevel(currentLevel, currentXP, xpTokensInMail, cloakBonusXP)
+    local remainingDungeonTokens = 39
+    local remainingRaidTokens = 10
+    local currentXP = currentXP
+    for i, v in ipairs(XP_Table) do 
         if v.Lvl >= currentLevel then
-            requiredDungeonTokens = requiredDungeonTokens + (v.RequiredXP / (v.BlueXPToken + v.BlueXPToken * cloakBonusXP / 100))
-
-            if v.EpicXPToken ~= 0 then
-                requiredRaidTokens = requiredRaidTokens + (v.RequiredXP / (v.EpicXPToken + v.EpicXPToken * cloakBonusXP / 100))
+            local blueXpValue = v.BlueXPToken * cloakBonusXP / 100
+            local epicXpValue = v.EpicXPToken * cloakBonusXP / 100
+            while (currentXP < v.RequiredXP) do
+                if remainingDungeonTokens > 0 then
+                    currentXP = currentXP + blueXpValue
+                    remainingDungeonTokens = remainingDungeonTokens - 1
+                elseif remainingRaidTokens > 0 then
+                    currentXP = currentXP + remainingRaidTokens
+                    remainingRaidTokens = remainingRaidTokens - 1
+                else
+                    return v.Lvl, 0
+                end
             end
 
-            if v.Lvl < 25 then
-                requiredRaidTokensUnder25 = requiredRaidTokensUnder25 + (v.RequiredXP / (v.BlueXPToken + v.BlueXPToken * cloakBonusXP / 100))
-            end
-        end
-
-        if v.Lvl == currentLevel then
-            currentLevelBlueXPToken = v.RequiredXP / (v.BlueXPToken + v.BlueXPToken * cloakBonusXP / 100)
-            if v.EpicXPToken ~= 0 then
-                currentLevelEpicXPToken = v.RequiredXP / (v.EpicXPToken + v.EpicXPToken * cloakBonusXP / 100)
-            end
-        end
-    end
-
-    requiredRaidTokens = requiredRaidTokens + requiredRaidTokensUnder25 * 0.625
-
-    local xpBarPercentage = currentXP / UnitXPMax("player")
-    local missingDungeonTokens = requiredDungeonTokens - (xpTokensInMail.Normal + xpTokensInMail.Heroic + xpBarPercentage * (1 + cloakBonusXP / 100))
-    local missingRaidTokens = requiredRaidTokens - (xpTokensInMail.Normal * 0.625 + xpTokensInMail.Heroic * 0.625 + xpTokensInMail.Raid + xpBarPercentage * (1 + cloakBonusXP / 100))
-
-    return requiredDungeonTokens, missingDungeonTokens, requiredRaidTokens, missingRaidTokens, currentLevelBlueXPToken, currentLevelEpicXPToken
-end
-
-function XP_Calculation:CalculateOverflowXP(currentLevel, missingTokens, tokenType, cloakBonusXP)
-    local level69RequiredXP = 0
-    for _, data in ipairs(XP_Table) do
-        if data.Lvl == 69 then
-            level69RequiredXP = data[tokenType]
-            break
+            currentXP = currentXP - v.RequiredXP
         end
     end
 
-    local overflowXP = level69RequiredXP * (missingTokens * -1) * (1 + cloakBonusXP / 100)
-    return overflowXP
+    return 70, remainingDungeonTokens + remainingRaidTokens
 end
-
-
 
 _G.XP_Calculation = XP_Calculation
 return XP_Calculation
