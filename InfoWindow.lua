@@ -42,12 +42,13 @@ Raid Tokens in Mail: %d]]):format(threadsCount, itemCount, xpCounts.Heroic, xpCo
 
         local requiredDungeonTokens, missingDungeonTokens, requiredRaidTokens, missingRaidTokens = XP_Calculation:CalculateTokens(currentLevel, currentXP, xpCounts, cloakBonusXP)
 
-        local overflowDungeonXP = XP_Calculation:CalculateOverflowXP(currentLevel, missingDungeonTokens, "BlueXPToken", cloakBonusXP)
-        local overflowRaidXP = XP_Calculation:CalculateOverflowXP(currentLevel, missingRaidTokens, "EpicXPToken", cloakBonusXP)
-
-        local openMailDungeon = missingDungeonTokens <= 0 and "|cff00FF00YES|r" or "|cffFF0000NO|r"
-        local openMailRaid = requiredRaidTokens > 0 and (missingRaidTokens <= 0 and "|cff00FF00YES|r" or "|cffFF0000NO|r") or ""
-        local openMail = (missingDungeonTokens <= 0 and missingRaidTokens <= 0) and "|cff00FF00YES|r" or "|cffFF0000NO|r"
+        local maxLevel, remainingTokens = XP_Calculation:MailTokenLevel(currentLevel, currentXP, xpCounts, cloakBonusXP)
+        local openMail = "|cffFFff00MAYBE|r" 
+        if maxLevel < 70 then
+            openMail = "|cffFF0000NO|r"
+        elseif remainingTokens > 2 then
+            openMail = "|cff00FF00YES|r"
+        end
 
         local experimentalInfoText = ([[
 
@@ -56,20 +57,12 @@ Current Level: %d
 XP Bar Progress: %.2f%%
 Cloak Bonus XP: %.2f%%
 
-|cff00ffffHC Dungeon Tokens|r
-Required: %.2f
-Missing: %.2f
-Open Mail? %s
-Overflow XP: %d
-
-|cffff8000Raid Tokens|r
-Required: %.2f
-Missing: %.2f
-Open Mail? %s
-Overflow XP: %d]]):format(
+|cff00ffffTokens|r
+Estimated Max Level: %.2f
+Extra Tokens: %.2f
+Open Mail? %s]]):format(
             currentLevel, xpBarProgress * 100, cloakBonusXP,
-            requiredDungeonTokens, missingDungeonTokens, openMailDungeon, overflowDungeonXP,
-            requiredRaidTokens, missingRaidTokens, openMailRaid, overflowRaidXP
+            maxLevel, remainingTokens, openMail
         )
 
         InfoTextFrame.experimentalInfoText:SetText(experimentalInfoText)
