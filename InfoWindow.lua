@@ -7,7 +7,7 @@ local infoTextShown = true
 function InfoWindow:CreateInfoText()
     if not InfoTextFrame then
         InfoTextFrame = CreateFrame("Frame", "InfoTextFrame", MailFrame)
-        InfoTextFrame:SetSize(300, 100)
+        InfoTextFrame:SetSize(300, 200)
         InfoTextFrame:SetPoint("TOPLEFT", ButtonFrame, "BOTTOMLEFT", 0, -10)
         
         InfoTextFrame.mainInfoText = InfoTextFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -31,8 +31,7 @@ function InfoWindow:UpdateInfoText()
 
         local mainInfoText = ([[Threads: %d
 Items: %d
-HC Tokens in Mail: %d
-Raid Tokens in Mail: %d]]):format(threadsCount, itemCount, xpCounts.Heroic, xpCounts.Raid)
+Tokens: %d]]):format(threadsCount, itemCount, xpCounts.Heroic)
 
         InfoTextFrame.mainInfoText:SetText(mainInfoText)
 
@@ -40,14 +39,9 @@ Raid Tokens in Mail: %d]]):format(threadsCount, itemCount, xpCounts.Heroic, xpCo
         local xpBarProgress = currentXP / UnitXPMax("player")
         local cloakBonusXP = XP_Calculation:GetCloakBonusXP()
 
-        local requiredDungeonTokens, missingDungeonTokens, requiredRaidTokens, missingRaidTokens = XP_Calculation:CalculateTokens(currentLevel, currentXP, xpCounts, cloakBonusXP)
-
-        local overflowDungeonXP = XP_Calculation:CalculateOverflowXP(currentLevel, missingDungeonTokens, "BlueXPToken", cloakBonusXP)
-        local overflowRaidXP = XP_Calculation:CalculateOverflowXP(currentLevel, missingRaidTokens, "EpicXPToken", cloakBonusXP)
-
-        local openMailDungeon = missingDungeonTokens <= 0 and "|cff00FF00YES|r" or "|cffFF0000NO|r"
-        local openMailRaid = requiredRaidTokens > 0 and (missingRaidTokens <= 0 and "|cff00FF00YES|r" or "|cffFF0000NO|r") or ""
-        local openMail = (missingDungeonTokens <= 0 and missingRaidTokens <= 0) and "|cff00FF00YES|r" or "|cffFF0000NO|r"
+        local requiredHCTokens, missingHCTokens = XP_Calculation:CalculateHCTokensOnly(currentLevel, currentXP, xpCounts, cloakBonusXP)
+        local overflowHCXP = XP_Calculation:CalculateOverflowXP(currentLevel, missingHCTokens, "BlueXPToken", cloakBonusXP)
+        local openMailHC = missingHCTokens <= 0 and "|cff00FF00READY|r" or "|cffFF0000NOT READY|r"
 
         local experimentalInfoText = ([[
 
@@ -55,21 +49,16 @@ Raid Tokens in Mail: %d]]):format(threadsCount, itemCount, xpCounts.Heroic, xpCo
 Current Level: %d
 XP Bar Progress: %.2f%%
 Cloak Bonus XP: %.2f%%
+Missing Tokens: %.0f
+Ready to collect: %s
 
-|cff00ffffHC Dungeon Tokens|r
-Required: %.2f
-Missing: %.2f
-Open Mail? %s
-Overflow XP: %d
-
-|cffff8000Raid Tokens|r
-Required: %.2f
-Missing: %.2f
-Open Mail? %s
-Overflow XP: %d]]):format(
+|cffffff00Info|r
+Run HC dungeons until collect is |cff00FF00READY|r,
+should be around level 36/37.
+You need around 140%% bonus xp.
+]]):format(
             currentLevel, xpBarProgress * 100, cloakBonusXP,
-            requiredDungeonTokens, missingDungeonTokens, openMailDungeon, overflowDungeonXP,
-            requiredRaidTokens, missingRaidTokens, openMailRaid, overflowRaidXP
+            missingHCTokens, openMailHC
         )
 
         InfoTextFrame.experimentalInfoText:SetText(experimentalInfoText)
@@ -104,6 +93,5 @@ function InfoWindow:IsInfoTextShown()
     return infoTextShown
 end
 
-
-
 addonTable.InfoWindow = InfoWindow
+return InfoWindow

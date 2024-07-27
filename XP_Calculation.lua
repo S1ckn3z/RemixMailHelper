@@ -109,7 +109,25 @@ function XP_Calculation:CalculateOverflowXP(currentLevel, missingTokens, tokenTy
     return overflowXP
 end
 
+function XP_Calculation:CalculateHCTokensOnly(currentLevel, currentXP, hcTokensInMail, cloakBonusXP)
+    local requiredHCTokens = 0
+    local currentLevelHCTokenXP = 0
 
+    for _, data in ipairs(XP_Table) do
+        if data.Lvl >= currentLevel then
+            requiredHCTokens = requiredHCTokens + (data.RequiredXP / (data.BlueXPToken + data.BlueXPToken * cloakBonusXP / 100))
+        end
+
+        if data.Lvl == currentLevel then
+            currentLevelHCTokenXP = data.RequiredXP / (data.BlueXPToken + data.BlueXPToken * cloakBonusXP / 100)
+        end
+    end
+
+    local xpBarPercentage = currentXP / UnitXPMax("player")
+    local missingHCTokens = requiredHCTokens - (hcTokensInMail.Normal + hcTokensInMail.Heroic + xpBarPercentage * (1 + cloakBonusXP / 100))
+
+    return requiredHCTokens, missingHCTokens, currentLevelHCTokenXP
+end
 
 _G.XP_Calculation = XP_Calculation
 return XP_Calculation

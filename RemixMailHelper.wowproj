@@ -13,6 +13,9 @@
     <Content Include="InfoWindow.lua">
       <SubType>Code</SubType>
     </Content>
+    <Content Include="ItemIDs.lua">
+      <SubType>Code</SubType>
+    </Content>
     <Content Include="RemixMailHelper.lua">
       <SubType>Code</SubType>
     </Content>
