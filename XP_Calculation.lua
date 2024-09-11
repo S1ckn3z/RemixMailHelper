@@ -19,10 +19,10 @@ end
 function XP_Calculation:GetXpTokens(level)
     for _, data in ipairs(XP_Table) do
         if data.Lvl == level then
-            return data.BlueXPToken, data.EpicXPToken
+            return data.BlueXPToken + 2, data.EpicXPToken + 2
         end
     end
-    return 0, 0
+    return 2, 2
 end
 
 function XP_Calculation:CountXpBonusItemsInMail()
@@ -68,21 +68,24 @@ function XP_Calculation:CalculateTokens(currentLevel, currentXP, xpTokensInMail,
 
     for i, v in ipairs(XP_Table) do
         if v.Lvl >= currentLevel then
-            requiredDungeonTokens = requiredDungeonTokens + (v.RequiredXP / (v.BlueXPToken + v.BlueXPToken * cloakBonusXP / 100))
+            local blueToken = v.BlueXPToken + 2
+            local epicToken = v.EpicXPToken + 2
+            
+            requiredDungeonTokens = requiredDungeonTokens + (v.RequiredXP / (blueToken + blueToken * cloakBonusXP / 100))
 
-            if v.EpicXPToken ~= 0 then
-                requiredRaidTokens = requiredRaidTokens + (v.RequiredXP / (v.EpicXPToken + v.EpicXPToken * cloakBonusXP / 100))
+            if epicToken ~= 0 then
+                requiredRaidTokens = requiredRaidTokens + (v.RequiredXP / (epicToken + epicToken * cloakBonusXP / 100))
             end
 
             if v.Lvl < 25 then
-                requiredRaidTokensUnder25 = requiredRaidTokensUnder25 + (v.RequiredXP / (v.BlueXPToken + v.BlueXPToken * cloakBonusXP / 100))
+                requiredRaidTokensUnder25 = requiredRaidTokensUnder25 + (v.RequiredXP / (blueToken + blueToken * cloakBonusXP / 100))
             end
         end
 
         if v.Lvl == currentLevel then
-            currentLevelBlueXPToken = v.RequiredXP / (v.BlueXPToken + v.BlueXPToken * cloakBonusXP / 100)
-            if v.EpicXPToken ~= 0 then
-                currentLevelEpicXPToken = v.RequiredXP / (v.EpicXPToken + v.EpicXPToken * cloakBonusXP / 100)
+            currentLevelBlueXPToken = v.RequiredXP / (blueToken + blueToken * cloakBonusXP / 100)
+            if epicToken ~= 0 then
+                currentLevelEpicXPToken = v.RequiredXP / (epicToken + epicToken * cloakBonusXP / 100)
             end
         end
     end

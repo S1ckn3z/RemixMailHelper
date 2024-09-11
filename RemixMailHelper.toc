@@ -2,7 +2,7 @@
 ## Title: Remix Mail Helper
 ## Notes: Your perfect mailbox helper for WoW Pandaria Remix.
 ## Author: s1ckn3z_1337
-## Version: 2.1
+## Version: 2.2
 
 XP_Table.lua
 XP_Calculation.lua
